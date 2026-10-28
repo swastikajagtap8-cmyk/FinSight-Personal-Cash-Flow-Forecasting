@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinSight: AI Cash Flow Forecasting &amp; Expense Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#f9f8f6;--card:rgba(255,255,255,.72);--bd:rgba(59,77,60,.12);--ink:#1f2a2e;--mute:#5d6b66;--pri:#3b4d3c;--pri2:#4a5d4e;--sage:#8a9a86;--sage-l:#e6ebe3;--red:#c81e3a;--red-l:#fbe6ea;--onpri:#f9f8f6;--sh:0 1px 2px rgba(59,77,60,.06),0 8px 24px -12px rgba(59,77,60,.18);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#141a15;--card:rgba(32,42,34,.7);--bd:rgba(168,185,164,.15);--ink:#eceee9;--mute:#a1ada5;--pri:#a9bca5;--pri2:#8a9a86;--sage-l:#2a362c;--red:#ff5d77;--red-l:#3d1b22;--onpri:#141a15;--sh:0 8px 24px -12px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#141a15;--card:rgba(32,42,34,.7);--bd:rgba(168,185,164,.15);--ink:#eceee9;--mute:#a1ada5;--pri:#a9bca5;--pri2:#8a9a86;--sage-l:#2a362c;--red:#ff5d77;--red-l:#3d1b22;--onpri:#141a15;--sh:0 8px 24px -12px rgba(0,0,0,.5)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;background-image:radial-gradient(900px 420px at 85% -10%,rgba(138,154,134,.25),transparent 60%),radial-gradient(700px 400px at -10% 30%,rgba(74,93,78,.10),transparent 60%)}
+h1,h2,.serif{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.01em}
+.card{background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--bd);border-radius:20px;box-shadow:var(--sh);padding:1.25rem}
+.mute{color:var(--mute)}.red{color:var(--red)}
+.btn{background:var(--pri);color:var(--onpri);border-radius:12px;padding:.6rem 1rem;font-weight:600;font-size:.875rem;display:inline-flex;gap:.4rem;align-items:center;transition:transform .15s,opacity .15s}
+.btn:hover{opacity:.92}.btn:active{transform:scale(.97)}
+.btn2{border:1px solid var(--bd);border-radius:10px;padding:.35rem .7rem;font-size:.8rem;font-weight:500}
+.btn2.on{background:var(--pri);color:var(--onpri)}
+.inp{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--bd);border-radius:12px;padding:.6rem .8rem;font-size:.9rem}
+:focus-visible{outline:2px solid var(--pri2);outline-offset:2px}
+.bar{height:10px;border-radius:99px;background:var(--sage-l);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:99px;background:var(--pri2);transition:width .5s,background .3s}
+.bar.over>i{background:var(--red)}
+.day{aspect-ratio:1/1;border-radius:12px;border:1px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.8rem;gap:1px;transition:background .15s}
+.day small{font-size:.62rem;opacity:.8}
+.day:not(:disabled):hover{background:var(--sage-l)}
+.day.over{background:var(--red-l);color:var(--red);font-weight:600}
+.day.sel{border-color:var(--pri);box-shadow:inset 0 0 0 1px var(--pri)}
+.day.today{border-color:var(--sage)}
+.day:disabled{opacity:.3}
+dialog{background:var(--bg);color:var(--ink);border:1px solid var(--bd);border-radius:22px;padding:1.5rem;width:min(92vw,420px);margin:auto}
+dialog::backdrop{background:rgba(20,26,21,.45);backdrop-filter:blur(4px)}
+.step{display:flex;gap:.75rem;padding:.7rem 0;border-top:1px solid var(--bd);font-size:.85rem;line-height:1.45}
+.step b.n{flex:none;width:24px;height:24px;border-radius:99px;background:var(--sage-l);color:var(--pri);display:grid;place-items:center;font-size:.75rem}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);background:var(--pri);color:var(--onpri);padding:.6rem 1rem;border-radius:12px;font-size:.85rem;opacity:0;transition:.3s;pointer-events:none;z-index:50}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="sticky top-0 z-20" style="background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--bd)">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl grid place-items-center" style="background:var(--pri);color:var(--onpri)"><i data-lucide="leaf" class="w-5 h-5"></i></div>
+      <div><h1 class="text-xl leading-none">FinSight</h1><p class="text-xs mute hidden sm:block mt-1">AI cash flow forecasting &amp; expense analysis</p></div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="todayLbl" class="text-sm mute hidden md:block"></span>
+      <button class="btn" id="openAdd"><i data-lucide="plus" class="w-4 h-4"></i>Add expense</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+  <section class="card lg:col-span-5">
+    <div class="flex items-center justify-between"><h2 class="text-lg">Today’s spending</h2><span class="text-xs mute" id="limLbl"></span></div>
+    <div class="mt-4 flex items-end gap-2"><span id="tSpent" class="serif text-5xl leading-none"></span><span class="mute text-sm pb-1">of <span id="tLimit"></span></span></div>
+    <div class="bar mt-4" id="tBar"><i style="width:0"></i></div>
+    <p id="tMsg" class="text-sm mt-3"></p>
+    <div class="mt-5 pt-4" style="border-top:1px solid var(--bd)">
+      <label for="limitIn" class="text-sm font-medium">Daily spending limit</label>
+      <div class="flex gap-2 mt-2">
+        <div class="relative flex-1"><span class="absolute left-3 top-1/2 -translate-y-1/2 mute">₹</span><input id="limitIn" type="number" min="100" step="50" class="inp" style="padding-left:1.8rem"></div>
+        <button class="btn" id="saveLimit">Update limit</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card lg:col-span-3 flex flex-col">
+    <h2 class="text-lg">Financial health</h2>
+    <div class="relative mx-auto mt-2 w-44">
+      <svg viewBox="0 0 120 70" class="w-full"><path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--sage-l)" stroke-width="10" stroke-linecap="round"/><path id="gArc" d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--pri2)" stroke-width="10" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100" style="transition:stroke-dasharray .8s"/></svg>
+      <div class="absolute inset-x-0 bottom-0 text-center"><div id="score" class="serif text-4xl leading-none"></div><div class="text-xs mute">out of 100</div></div>
+    </div>
+    <p id="scoreLbl" class="text-center font-medium mt-3"></p>
+    <dl class="text-sm mt-auto pt-4 space-y-2">
+      <div class="flex justify-between"><dt class="mute">Savings rate</dt><dd id="hSave" class="font-semibold"></dd></div>
+      <div class="flex justify-between"><dt class="mute">Days within limit</dt><dd id="hAdh" class="font-semibold"></dd></div>
+    </dl>
+  </section>
+
+  <section class="card lg:col-span-4">
+    <h2 class="text-lg">Smart category split</h2>
+    <p class="text-xs mute">This month, auto-categorised by AI</p>
+    <div class="flex items-center gap-4 mt-3">
+      <div class="w-36 h-36 flex-none"><canvas id="donut" aria-label="Spending by category"></canvas></div>
+      <ul id="legend" class="text-sm space-y-2 flex-1"></ul>
+    </div>
+  </section>
+
+  <section class="card lg:col-span-8">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div><h2 class="text-lg">AI cash flow forecast</h2><p class="text-xs mute">Solid lines are actuals; dashed lines are model predictions</p></div>
+      <div class="flex gap-2"><button class="btn2 on" data-v="w">8 weeks</button><button class="btn2" data-v="m">6 months</button></div>
+    </div>
+    <div class="h-64 mt-3"><canvas id="fc"></canvas></div>
+    <div class="grid grid-cols-3 gap-3 mt-4 text-sm" id="fcStats"></div>
+  </section>
+
+  <section class="card lg:col-span-4" id="planCard">
+    <div class="flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5" style="color:var(--pri2)"></i><h2 class="text-lg">Budget recovery plan</h2></div>
+    <div id="plan"></div>
+  </section>
+
+  <section class="card lg:col-span-7">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg" id="calTitle"></h2>
+      <div class="flex gap-1"><button class="btn2" id="prevM" aria-label="Previous month"><i data-lucide="chevron-left" class="w-4 h-4"></i></button><button class="btn2" id="nextM" aria-label="Next month"><i data-lucide="chevron-right" class="w-4 h-4"></i></button></div>
+    </div>
+    <div class="grid grid-cols-7 gap-1 text-center text-xs mute mb-1"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+    <div id="cal" class="grid grid-cols-7 gap-1"></div>
+    <p class="text-xs mute mt-3 flex items-center gap-2"><span class="inline-block w-3 h-3 rounded" style="background:var(--red-l);border:1px solid var(--red)"></span>Red days went over your daily limit</p>
+  </section>
+
+  <section class="card lg:col-span-5">
+    <h2 class="text-lg" id="dayTitle"></h2>
+    <p id="daySum" class="text-sm mt-1"></p>
+    <ul id="dayList" class="mt-3 divide-y text-sm" style="--tw-divide-opacity:1"></ul>
+  </section>
+
+  <section class="card lg:col-span-12">
+    <h2 class="text-lg">How FinSight works</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-3 text-sm">
+      <div><i data-lucide="database" class="w-5 h-5 mb-2" style="color:var(--pri2)"></i><p class="font-medium">Dataset layer</p><p class="mute">Seeded 75-day transaction ledger with a normalised schema: id, date, category, description, amount.</p></div>
+      <div><i data-lucide="tags" class="w-5 h-5 mb-2" style="color:var(--pri2)"></i><p class="font-medium">Categorisation</p><p class="mute">Keyword-based classifier maps each description to Groceries, Tech, Leisure or Bills.</p></div>
+      <div><i data-lucide="trending-up" class="w-5 h-5 mb-2" style="color:var(--pri2)"></i><p class="font-medium">Forecast engine</p><p class="mute">Trailing-average projection with a trend term and a seasonal festival uplift.</p></div>
+      <div><i data-lucide="shield-check" class="w-5 h-5 mb-2" style="color:var(--pri2)"></i><p class="font-medium">Recommendation engine</p><p class="mute">Turns total overspend into a capped, category-weighted recovery schedule.</p></div>
+    </div>
+  </section>
+</main>
+<footer class="text-center text-xs mute pb-8">FinSight demo · all figures are simulated sample data</footer>
+
+<dialog id="dlg">
+  <form method="dialog" id="addForm" class="space-y-3">
+    <div class="flex justify-between items-center"><h2 class="text-xl">Log an expense</h2><button type="button" id="closeAdd" class="btn2" aria-label="Close"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <div><label class="text-sm font-medium" for="fAmt">Amount (₹)</label><input id="fAmt" type="number" min="1" step="1" required class="inp mt-1" placeholder="450"></div>
+    <div><label class="text-sm font-medium" for="fDesc">Description</label><input id="fDesc" type="text" required class="inp mt-1" placeholder="e.g. Swiggy dinner, USB-C cable"></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="text-sm font-medium" for="fCat">Category</label><select id="fCat" class="inp mt-1"><option value="auto">Auto-detect (AI)</option><option>Groceries</option><option>Tech</option><option>Leisure</option><option>Bills</option></select></div>
+      <div><label class="text-sm font-medium" for="fDate">Date</label><input id="fDate" type="date" required class="inp mt-1"></div>
+    </div>
+    <button class="btn w-full justify-center" type="submit">Save expense</button>
+  </form>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const CATS=['Groceries','Tech','Leisure','Bills'];
+const CC={Groceries:'#4a5d4e',Tech:'#8a9a86',Leisure:'#c9a66b',Bills:'#6f7f8c'};
+const KW={Groceries:/grocer|vegetable|milk|bigbasket|market|fruit|kirana/i,Tech:/cable|laptop|phone|app|gadget|headphone|usb|software|amazon/i,Leisure:/movie|swiggy|zomato|dinner|cafe|coffee|game|trip|concert|netflix/i,Bills:/electric|rent|wifi|internet|bill|recharge|insurance|gas|water/i};
+const INCOME=85000;
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=new Date();today.setHours(0,0,0,0);const TK=key(today);
+const $=id=>document.getElementById(id);
+let limit=+(localStorageGet('fs_limit')||2200),uid=0,tx=[];
+function localStorageGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function localStorageSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+/* ---------- seeded dataset ---------- */
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+(function seed(){const r=rng(2026);
+ const D={Groceries:['Vegetables & fruit','BigBasket order','Milk & staples','Kirana store'],Tech:['USB-C cable','Amazon gadget','Cloud software plan','Headphones'],Leisure:['Zomato dinner','Movie tickets','Coffee with friends','Weekend trip'],Bills:['Electricity bill','Wi-Fi recharge','Water bill','Phone recharge']};
+ const R={Groceries:[300,1100,.9],Tech:[800,4200,.12],Leisure:[300,1600,.55],Bills:[400,1900,.2]};
+ for(let i=75;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);
+  CATS.forEach(c=>{const[lo,hi,p]=R[c];if(r()<p)tx.push({id:++uid,date:key(d),cat:c,desc:D[c][Math.floor(r()*4)],amt:Math.round((lo+r()*(hi-lo))/10)*10})})}
+})();
+const classify=t=>CATS.find(c=>KW[c].test(t))||'Leisure';
+
+/* ---------- derived data ---------- */
+const byDay=()=>{const m={};tx.forEach(t=>(m[t.date]=m[t.date]||[]).push(t));return m};
+const sum=a=>a.reduce((s,t)=>s+t.amt,0);
+const dim=(y,m)=>new Date(y,m+1,0).getDate();
+function monthTx(){return tx.filter(t=>t.date.startsWith(TK.slice(0,7)))}
+
+/* ---------- today tracker ---------- */
+function renderTracker(){const s=sum(tx.filter(t=>t.date===TK)),pct=s/limit*100,over=s>limit;
+ $('tSpent').textContent=inr(s);$('tSpent').className='serif text-5xl leading-none '+(over?'red':'');
+ $('tLimit').textContent=inr(limit);$('limLbl').textContent='Limit '+inr(limit)+' / day';
+ const b=$('tBar');b.className='bar mt-4'+(over?' over':'');b.firstElementChild.style.width=Math.min(pct,100)+'%';
+ $('tMsg').innerHTML=over?`<span class="red font-semibold">Over by ${inr(s-limit)}.</span> <span class="mute">The recovery plan has been updated.</span>`:`<span class="font-medium">${inr(limit-s)} left today</span> <span class="mute">(${Math.round(pct)}% used)</span>`;
+ $('limitIn').value=limit}
+
+/* ---------- health ---------- */
+function renderHealth(){const days={};monthTx().forEach(t=>days[t.date]=(days[t.date]||0)+t.amt);
+ const n=today.getDate(),keys=Array.from({length:n},(_,i)=>TK.slice(0,8)+pad(i+1));
+ const ok=keys.filter(k=>(days[k]||0)<=limit).length,adh=ok/n;
+ const spent=sum(monthTx()),inc=INCOME*n/dim(today.getFullYear(),today.getMonth()),sr=Math.max(0,1-spent/inc);
+ const sc=Math.round(50*adh+50*Math.min(sr/.3,1)),bad=sc<60;
+ $('score').textContent=sc;$('gArc').setAttribute('stroke-dasharray',sc+' 100');$('gArc').setAttribute('stroke',bad?'var(--red)':'var(--pri2)');
+ $('scoreLbl').textContent=sc>=80?'Excellent':sc>=60?'Good, with room to grow':'Needs attention';$('scoreLbl').className='text-center font-medium mt-3'+(bad?' red':'');
+ $('hSave').textContent=Math.round(sr*100)+'%';$('hAdh').textContent=ok+' of '+n}
+
+/* ---------- charts ---------- */
+let donut,fc,fcView='w';
+const tick=()=>getComputedStyle(document.documentElement).getPropertyValue('--mute').trim();
+function renderDonut(){const m=monthTx(),tot=CATS.map(c=>sum(m.filter(t=>t.cat===c))),T=tot.reduce((a,b)=>a+b,0)||1;
+ $('legend').innerHTML=CATS.map((c,i)=>`<li class="flex items-center gap-2"><i class="w-3 h-3 rounded-full" style="background:${CC[c]}"></i><span class="flex-1">${c}</span><span class="font-semibold">${Math.round(tot[i]/T*100)}%</span></li>`).join('');
+ if(!donut)donut=new Chart($('donut'),{type:'doughnut',data:{labels:CATS,datasets:[{data:tot,backgroundColor:CATS.map(c=>CC[c]),borderWidth:0}]},options:{cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.label+': '+inr(c.raw)}}}}});
+ else{donut.data.datasets[0].data=tot;donut.update()}}
+function forecastData(){const d=byDay(),daily=k=>sum(d[k]||[]);
+ if(fcView==='w'){const L=[],E=[],I=[];
+  for(let k=3;k>=0;k--){let s=0;for(let j=0;j<7;j++){const x=new Date(today);x.setDate(x.getDate()-7*k-j);s+=daily(key(x))}
+   const e=new Date(today);e.setDate(e.getDate()-7*k);L.push(e.toLocaleDateString('en-IN',{day:'numeric',month:'short'}));E.push(s);I.push(INCOME/4.33)}
+  const avg=E.reduce((a,b)=>a+b,0)/4;
+  for(let k=1;k<=8;k++){const e=new Date(today);e.setDate(e.getDate()+7*k);L.push(e.toLocaleDateString('en-IN',{day:'numeric',month:'short'}));E.push(avg*(1+.012*k+(k%4===0?.08:0)));I.push(INCOME/4.33+(k%4===0?4000:0))}
+  return{L,E,I,h:4}}
+ const L=[],E=[],I=[],mn=m=>new Date(2026,m,1).toLocaleDateString('en-IN',{month:'short'});
+ const base=today.getMonth(),yr=today.getFullYear(),mo=sum(tx.filter(t=>t.date.startsWith(TK.slice(0,7)))),proj=mo/today.getDate()*dim(yr,base);
+ for(let k=-2;k<=5;k++){const m=new Date(yr,base+k,1);L.push(m.toLocaleDateString('en-IN',{month:'short'}));
+  let e;if(k<0){const p=new Date(yr,base+k,1),pk=key(p).slice(0,7);e=sum(tx.filter(t=>t.date.startsWith(pk)));if(!e)e=proj*.95}else if(k===0)e=proj;else e=proj*(1+.015*k+([1,2].includes(k)?.07:0));
+  E.push(e);I.push(INCOME)}
+ return{L,E,I,h:3}}
+function renderForecast(){const{L,E,I,h}=forecastData(),seg=c=>c.p0DataIndex>=h-1?[6,5]:undefined,mk=(l,d,c)=>({label:l,data:d,borderColor:c,backgroundColor:c,tension:.35,borderWidth:2.5,pointRadius:3,segment:{borderDash:seg}});
+ const cfg={labels:L,datasets:[mk('Income',I,'#4a5d4e'),mk('Expenses',E,'#c81e3a')]};
+ if(fc){fc.data=cfg;fc.update()}else fc=new Chart($('fc'),{type:'line',data:cfg,options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{usePointStyle:true,color:tick}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+inr(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:tick}},y:{grid:{color:'rgba(138,154,134,.2)'},ticks:{color:tick,callback:v=>'₹'+v/1000+'k'}}}}});
+ const fi=I.slice(h),fe=E.slice(h),net=sum2(fi)-sum2(fe),sv=net/sum2(fi);
+ $('fcStats').innerHTML=[['Predicted income',inr(sum2(fi)),''],['Predicted expenses',inr(sum2(fe)),''],['Projected savings',inr(net)+' ('+Math.round(sv*100)+'%)',net<0?'red':'']].map(([a,b,c])=>`<div class="rounded-xl p-3" style="background:var(--sage-l)"><p class="text-xs mute">${a}</p><p class="font-semibold ${c}">${b}</p></div>`).join('')}
+const sum2=a=>a.reduce((x,y)=>x+y,0);
+
+/* ---------- recovery plan ---------- */
+function renderPlan(){const m=monthTx(),days={};m.forEach(t=>days[t.date]=(days[t.date]||0)+t.amt);
+ const overDays=Object.entries(days).filter(([,v])=>v>limit),over=overDays.reduce((s,[,v])=>s+v-limit,0);
+ if(!over){$('plan').innerHTML=`<p class="mt-3 text-sm">You haven’t overspent this month. Keep today’s pace and FinSight will flag any slip.</p>`;return}
+ const left=dim(today.getFullYear(),today.getMonth())-today.getDate(),win=left>=7?left:7,per=over/win,cap=Math.max(limit-per,0),end=new Date(today);end.setDate(end.getDate()+win);
+ const W={Leisure:.45,Tech:.25,Groceries:.2,Bills:.1},wk=c=>inr(per*7*W[c]);
+ const dow=[0,0,0,0,0,0,0];overDays.forEach(([k])=>dow[new Date(k).getDay()]++);const pk=dow.indexOf(Math.max(...dow)),dn=['Sundays','Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays'][pk];
+ const S=[`Set a temporary daily cap of <b>${inr(cap)}</b> for the next ${win} days. That recovers the full ${inr(over)} by ${end.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}.`,
+ `Trim weekly spending: Leisure <b>−${wk('Leisure')}</b>, Tech <b>−${wk('Tech')}</b>, Groceries <b>−${wk('Groceries')}</b> (plan meals ahead), Bills <b>−${wk('Bills')}</b> (review subscriptions).`,
+ `Overspending peaks on <b>${dn}</b>. Make that a low-spend day with a cap of ${inr(cap*.6)}.`,
+ `Pause non-essential Tech purchases until the plan finishes, or move them to next month.`,
+ `Check in weekly. If you stay under ${inr(cap)}, you’re back on budget in ${win} days.`];
+ $('plan').innerHTML=`<div class="mt-3 rounded-xl p-3" style="background:var(--red-l)"><p class="text-xs red">Total overspent this month</p><p class="serif text-3xl red">${inr(over)}</p><p class="text-xs mute">across ${overDays.length} day${overDays.length>1?'s':''} above ${inr(limit)}</p></div><div class="mt-2">${S.map((s,i)=>`<div class="step"><b class="n">${i+1}</b><p>${s}</p></div>`).join('')}</div>`}
+
+/* ---------- calendar ---------- */
+let vy=today.getFullYear(),vm=today.getMonth(),sel=TK;
+function renderCal(){const d=byDay(),first=new Date(vy,vm,1),off=(first.getDay()+6)%7,n=dim(vy,vm);
+ $('calTitle').textContent=first.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+ let h='<span></span>'.repeat(off);
+ for(let i=1;i<=n;i++){const dt=new Date(vy,vm,i),k=key(dt),s=sum(d[k]||[]),fut=dt>today,ov=s>limit;
+  h+=`<button class="day${ov?' over':''}${k===sel?' sel':''}${k===TK?' today':''}" data-k="${k}" ${fut?'disabled':''}><span>${i}</span><small>${s&&!fut?(s/1000).toFixed(1)+'k':''}</small></button>`}
+ $('cal').innerHTML=h;$('nextM').disabled=vy===today.getFullYear()&&vm===today.getMonth();renderDay()}
+function renderDay(){const L=tx.filter(t=>t.date===sel),s=sum(L),ov=s>limit,dt=new Date(sel+'T00:00:00');
+ $('dayTitle').textContent=dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+ $('daySum').innerHTML=!L.length?'<span class="mute">No spending logged.</span>':ov?`<span class="red font-semibold">${inr(s)} spent, ${inr(s-limit)} over the limit</span>`:`<span class="font-semibold">${inr(s)} spent</span> <span class="mute">· ${inr(limit-s)} under limit</span>`;
+ $('dayList').innerHTML=L.map(t=>`<li class="flex items-center gap-3 py-2.5" style="border-color:var(--bd)"><i class="w-2.5 h-2.5 rounded-full" style="background:${CC[t.cat]}"></i><div class="flex-1"><p>${t.desc.replace(/</g,'&lt;')}</p><p class="text-xs mute">${t.cat}</p></div><span class="font-semibold ${ov?'red':''}">${inr(t.amt)}</span></li>`).join('')}
+
+/* ---------- events ---------- */
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+function refresh(){renderTracker();renderHealth();renderDonut();renderForecast();renderPlan();renderCal()}
+$('cal').onclick=e=>{const b=e.target.closest('.day');if(b){sel=b.dataset.k;renderCal()}};
+$('prevM').onclick=()=>{vm--;if(vm<0){vm=11;vy--}renderCal()};
+$('nextM').onclick=()=>{vm++;if(vm>11){vm=0;vy++}renderCal()};
+$('saveLimit').onclick=()=>{const v=+$('limitIn').value;if(v>=100){limit=v;localStorageSet('fs_limit',v);refresh();toast('Daily limit updated to '+inr(v))}else toast('Enter a limit of at least ₹100')};
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{fcView=b.dataset.v;document.querySelectorAll('[data-v]').forEach(x=>x.classList.toggle('on',x===b));renderForecast()});
+$('openAdd').onclick=()=>{$('fDate').value=TK;$('fDate').max=TK;$('dlg').showModal();$('fAmt').focus()};
+$('closeAdd').onclick=()=>$('dlg').close();
+$('addForm').onsubmit=e=>{const a=+$('fAmt').value,desc=$('fDesc').value.trim();if(!(a>0)||!desc)return;let c=$('fCat').value;if(c==='auto')c=classify(desc);
+ const date=$('fDate').value||TK;tx.push({id:++uid,date,cat:c,desc,amt:Math.round(a)});sel=date;vy=+date.slice(0,4);vm=+date.slice(5,7)-1;
+ $('addForm').reset();refresh();toast('Saved to '+c+': '+inr(a))};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(fc){fc.options.scales.x.ticks.color=fc.options.scales.y.ticks.color=fc.options.plugins.legend.labels.color=tick();fc.update()}});
+$('todayLbl').textContent=today.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+refresh();lucide.createIcons();
+</script>
+</body>
+</html>
